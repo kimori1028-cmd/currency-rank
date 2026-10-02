@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>世界の通貨安ランキング</title>
+<meta name="description" content="153 の通貨を、米ドルに対してどれだけ価値が減ったかで毎日並べます。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="#">世界の通貨安ランキング</a>
+    <div class="asof" id="asof"></div>
+  </header>
+
+  <main id="view-rank">
+    <section class="alerts" id="alerts" hidden>
+      <h2>今日の異変</h2>
+      <div class="alert-list" id="alert-list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="ui-head">
+        <div>
+          <h1 class="ui-title">対ドルで弱くなった通貨</h1>
+          <div class="ui-sub" id="rank-sub"></div>
+        </div>
+        <div class="controls">
+          <div><span class="seg-label">期間</span><span class="seg" id="seg-period">
+            <button type="button" data-p="d1">1日</button><button type="button" data-p="d7">7日</button><button type="button" data-p="d30">30日</button><button type="button" data-p="ytd">年初来</button>
+          </span></div>
+          <div><span class="seg-label">並べ方</span><span class="seg" id="seg-sort">
+            <button type="button" data-s="chg">下落の大きい順</button><button type="button" data-s="z">普段と比べた異変の順</button>
+          </span></div>
+          <div><label class="seg-label" for="q">さがす</label><input id="q" type="search" placeholder="国名かコード" autocomplete="off"></div>
+        </div>
+      </div>
+      <div class="scroll-x">
+        <table class="rank">
+          <thead><tr><th>順位</th><th>通貨</th><th class="r">1ドル＝</th><th class="r" id="th-chg">通貨の価値の変化</th><th class="r">普段の何倍（7日）</th><th>1年の動き</th><th>注意</th></tr></thead>
+          <tbody id="rank-body"></tbody>
+        </table>
+      </div>
+      <div class="more"><button type="button" id="more" class="link-btn"></button></div>
+    </section>
+
+    <section class="notes">
+      <div><h3>通貨の価値の変化</h3><p>マイナスが通貨安です。1 ドル＝100 が 125 になれば −20% と数えます。</p></div>
+      <div><h3>普段の何倍</h3><p>この 1 週間の動きが、過去 1 年の週ごとの振れ幅の何倍かです。3 倍以上の下落を異変として上に出します。</p></div>
+      <div><h3>注意の旗</h3><p>段差・値の飛び・要確認の旗が付いた行は、数字をそのまま信じてはいけない行です。通貨を選ぶと理由が出ます。</p></div>
+      <div><h3>市中レート</h3><p>公定レートと街の相場が離れている国は、街の相場で並べます。いまはイランだけです。</p></div>
+    </section>
+  </main>
+
+  <main id="view-country" hidden>
+    <a class="back" href="#">← ランキングに戻る</a>
+    <section class="panel">
+      <div class="ui-head">
+        <div>
+          <h1 class="ui-title" id="c-title"></h1>
+          <div class="ui-sub" id="c-sub"></div>
+        </div>
+        <div class="controls">
+          <div><span class="seg-label">表示する期間</span><span class="seg" id="seg-range">
+            <button type="button" data-r="92">3か月</button><button type="button" data-r="365">1年</button><button type="button" data-r="0">全期間</button>
+          </span></div>
+        </div>
+      </div>
+      <div class="detail">
+        <div>
+          <div class="legend" id="c-legend" hidden></div>
+          <div class="chart-wrap"><svg class="line" id="c-chart" viewBox="0 0 760 360" role="img"></svg></div>
+        </div>
+        <div class="side">
+          <div class="facts" id="c-facts"></div>
+          <div id="c-flags" class="flag-list"></div>
+        </div>
+      </div>
+      <details><summary>表で見る（直近 30 日）</summary><div id="c-table"></div></details>
+    </section>
+  </main>
+
+  <footer class="foot" id="foot"></footer>
+  <div class="tip" id="tip" hidden></div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
