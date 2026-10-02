@@ -98,8 +98,8 @@ table.rank .r { text-align: right; }
 .back { font-size: 13.5px; color: var(--accent); width: fit-content; }
 .detail { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 20px; align-items: start; }
 @media (max-width: 800px) { .detail { grid-template-columns: minmax(0, 1fr); } }
-.chart-wrap { position: relative; min-width: 0; overflow-x: auto; }
-svg.line { width: 100%; min-width: 560px; height: auto; display: block; }
+.chart-wrap { position: relative; min-width: 0; }
+svg.line { width: 100%; height: auto; display: block; }
 svg.line .grid { stroke: var(--line); stroke-width: 1; }
 svg.line .base { stroke: var(--axis); stroke-width: 1; }
 svg.line .tick { fill: var(--muted); font-family: var(--mono); font-size: 11px; }

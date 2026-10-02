@@ -115,7 +115,10 @@
 
   function renderChart() {
     const S = SERIES, svg = $('c-chart');
-    const W = 760, H = 360, L = 62, R = 124, T = 22, B = 34;
+    // 図の大きさを入れ物の幅に合わせる（文字の大きさを変えずに、スマホでも端の値が見えるように）
+    const W = Math.max(340, Math.round(svg.parentNode.clientWidth) || 760), H = Math.round(Math.max(250, Math.min(360, W * 0.5)));
+    const L = 62, R = W < 560 ? 92 : 124, T = 22, B = 34;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     const cutoff = state.range ? new Date(Date.parse(S.end) - state.range * 864e5).toISOString().slice(0, 10) : '0000';
     const lines = [{ key: 'main', name: S.market ? S.market.label : null, dates: S.dates, vals: cleaned(S.dates, S.vals, S.spikes), raw: S.vals, spikes: S.spikes, steps: S.steps, cls: 'series', dot: 'dot' }];
     if (S.official) lines.push({ key: 'off', name: '配信レート', dates: S.official.dates, vals: cleaned(S.official.dates, S.official.vals, S.official.spikes), raw: S.official.vals, spikes: S.official.spikes, steps: S.official.steps, cls: 'series2', dot: 'dot2' });
@@ -138,7 +141,7 @@
     while (dt.getTime() <= t1) {
       if (dt.getUTCMonth() % every === 0) {
         const x = L + (dt.getTime() - t0) / ((t1 - t0) || 1) * (W - L - R);
-        if (x - lastX > 60) { s += '<text class="tick" x="' + x.toFixed(1) + '" y="' + (H - 12) + '" text-anchor="middle">' + dt.getUTCFullYear() + '/' + String(dt.getUTCMonth() + 1).padStart(2, '0') + '</text>'; lastX = x; }
+        if (x - lastX > 60 && x < W - R + 1) { s += '<text class="tick" x="' + x.toFixed(1) + '" y="' + (H - 12) + '" text-anchor="middle">' + dt.getUTCFullYear() + '/' + String(dt.getUTCMonth() + 1).padStart(2, '0') + '</text>'; lastX = x; }
       }
       dt.setUTCMonth(dt.getUTCMonth() + 1);
     }
@@ -154,7 +157,7 @@
       l.spikes.filter(d => d >= l.dates[l.i0]).forEach(d => { s += '<circle class="mark" cx="' + X(d).toFixed(1) + '" cy="' + (Y(y0) - 5) + '" r="3.5"/>'; });
       // 段差は大きいもの 2 つまで名札を付ける
       l.steps.filter(st => st[0] >= l.dates[l.i0]).sort((a, b) => Math.abs(Math.log(1 + b[1] / 100)) - Math.abs(Math.log(1 + a[1] / 100))).slice(0, 2).forEach(st => {
-        const i = l.dates.indexOf(st[0]), x = X(st[0]), y = Y(l.vals[i]), left = x > L + 150;
+        const i = l.dates.indexOf(st[0]), x = X(st[0]), y = Y(l.vals[i]), left = x > L + 130;
         const pct = st[1] > 999 ? '+999%超' : fmtPct(st[1]);
         s += '<text class="note" x="' + (left ? x - 10 : x + 10).toFixed(1) + '" y="' + Math.max(T + 12, y + (st[1] < 0 ? 18 : -8)).toFixed(1) + '" text-anchor="' + (left ? 'end' : 'start') + '">' + md(st[0]) + ' 段差 ' + pct + '</text>';
       });
@@ -230,6 +233,8 @@
   }
 
   $('seg-range').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.range = Number(b.dataset.r); renderChart(); } });
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (SERIES && !$('view-country').hidden) renderChart(); }, 150); });
 
   /* ---------- 画面の切り替え ---------- */
   function route() {
