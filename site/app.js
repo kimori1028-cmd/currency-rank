@@ -4,7 +4,10 @@
   const $ = id => document.getElementById(id);
   const PLABEL = { d1: '1日', d7: '7日', d30: '30日', ytd: '年初来' };
   const TOP = 20;
-  const WARN = { step: true, spike: true, check: true };
+  const WARN = { step: true, spike: true, check: true, diff: true };
+  const REGIONS = ['中東', 'アフリカ', 'アジア', '欧州・旧ソ連', '南北アメリカ', 'オセアニア'];
+  // 色の区切り（%）。期間が長いほど動きが大きいので、区切りも広げる
+  const BANDS = { d1: [0.3, 1, 3], d7: [0.5, 2, 5], d30: [1, 3, 10], ytd: [3, 10, 25] };
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fmtPct = v => v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toFixed(2) + '%';
@@ -87,6 +90,35 @@
   $('q').addEventListener('input', e => { state.q = e.target.value; renderRank(); });
   $('more').addEventListener('click', () => { state.all = !state.all; renderRank(); });
   $('rank-body').addEventListener('click', e => { const tr = e.target.closest('tr[data-c]'); if (tr && !e.target.closest('a')) location.hash = tr.dataset.c; });
+
+  /* ---------- 世界の一覧 ---------- */
+  function band(v, b) { const a = Math.abs(v), k = a >= b[2] ? 3 : a >= b[1] ? 2 : a >= b[0] ? 1 : 0; return k ? (v < 0 ? 'r' : 'b') + k : ''; }
+
+  function renderWorld() {
+    const p = state.period, b = BANDS[p];
+    $('regions').innerHTML = REGIONS.map(g => {
+      const list = DATA.rows.filter(r => r.g === g).sort((x, y) => (x[p] == null ? 1e9 : x[p]) - (y[p] == null ? 1e9 : y[p]));
+      return '<div class="region"><div class="region-name">' + g + '<span class="num">　' + list.length + '</span></div><div class="tiles">' +
+        list.map(r => '<a class="tile ' + (r[p] == null ? 'na' : band(r[p], b)) + '" href="#' + r.c + '" data-c="' + r.c + '" aria-label="' + esc(r.n) + ' ' + r.c + ' ' + PLABEL[p] + 'で ' + fmtPct(r[p]) + '">' + r.c + '</a>').join('') + '</div></div>';
+    }).join('');
+    const lab = [['r3', '−' + b[2] + '%以下'], ['r2', '−' + b[2] + '〜−' + b[1]], ['r1', '−' + b[1] + '〜−' + b[0]], ['mid', '±' + b[0] + '%以内'], ['b1', '+' + b[0] + '〜+' + b[1]], ['b2', '+' + b[1] + '〜+' + b[2]], ['b3', '+' + b[2] + '%以上']];
+    $('w-legend').innerHTML = lab.map(a => '<span><i style="background:var(--' + a[0] + ')"></i>' + a[1] + '</span>').join('');
+    $('world-sub').textContent = '通貨の価値の変化（' + PLABEL[p] + '）・' + DATA.ref[p] + ' と ' + DATA.end + ' の比較';
+    document.querySelectorAll('#seg-wperiod button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.p === p)));
+  }
+  (function () {
+    const reg = $('regions');
+    const show = t => {
+      const r = DATA.rows.find(x => x.c === t.dataset.c), bx = t.getBoundingClientRect(), p = state.period;
+      const fl = (r.alert ? ['異変'] : []).concat(r.m ? [r.m] : [], r.f.map(f => f.t));
+      showTip('<b>' + esc(r.n) + '</b>（' + r.c + '）<br>' + PLABEL[p] + ' <span class="num">' + fmtPct(r[p]) + '</span>・1ドル＝<span class="num">' + fmtRate(r.rate) + '</span>' + (fl.length ? '<br>' + fl.map(esc).join('・') : ''), bx.left + bx.width / 2, bx.top);
+    };
+    reg.addEventListener('pointerover', e => { const t = e.target.closest('.tile'); if (t) show(t); });
+    reg.addEventListener('pointerout', hideTip);
+    reg.addEventListener('focusin', e => { const t = e.target.closest('.tile'); if (t) show(t); });
+    reg.addEventListener('focusout', hideTip);
+    $('seg-wperiod').addEventListener('click', e => { const x = e.target.closest('button'); if (x) { state.period = x.dataset.p; save('cr.period', state.period); renderWorld(); renderRank(); } });
+  })();
 
   /* ---------- 国別 ---------- */
   let SERIES = null;
@@ -241,14 +273,19 @@
     hideTip();
     const code = decodeURIComponent(location.hash.replace('#', '')).toUpperCase();
     const row = code && DATA.rows.find(r => r.c === code);
+    const world = code === 'WORLD';
+    document.querySelectorAll('#tabs a').forEach(a => {
+      if (!row && (a.dataset.v === 'world') === world) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
     if (!row) {
-      $('view-country').hidden = true; $('view-rank').hidden = false;
-      document.title = '世界の通貨安ランキング';
+      $('view-country').hidden = true; $('view-rank').hidden = world; $('view-world').hidden = !world;
+      document.title = (world ? '世界の一覧｜' : '') + '世界の通貨安ランキング';
+      if (world) renderWorld();
       return;
     }
     fetch('data/series/' + code + '.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => {
       SERIES = j;
-      $('view-rank').hidden = true; $('view-country').hidden = false;
+      $('view-rank').hidden = true; $('view-world').hidden = true; $('view-country').hidden = false;
       renderCountry();
       window.scrollTo(0, 0);
     }).catch(() => { location.hash = ''; });
@@ -258,7 +295,7 @@
   fetch('data/latest.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => {
     DATA = j;
     $('asof').textContent = j.end + ' の値（' + j.generated + ' 更新）';
-    $('foot').innerHTML = 'データの出どころ: 無料の公開レート配信（currency-api）。イランの市中レートは bonbast.com の両替相場の公開アーカイブ。値は配信されたものに点検の旗を付けただけで、正しさは保証しません。売買の判断に使うものではありません。';
+    $('foot').innerHTML = 'データの出どころ: 無料の公開レート配信（currency-api）。イランの市中レートは bonbast.com の両替相場の公開アーカイブ。突き合わせ用の 2 本目は <a href="https://www.exchangerate-api.com">Rates By Exchange Rate API</a>。値は配信されたものに点検の旗を付けただけで、正しさは保証しません。売買の判断に使うものではありません。';
     renderAlerts(); renderRank(); route();
   }).catch(() => {
     $('rank-body').innerHTML = '<tr><td colspan="7" class="empty">データを読み込めませんでした。少し待ってから開き直してください。</td></tr>';

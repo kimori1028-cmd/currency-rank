@@ -16,6 +16,9 @@
     <a class="brand" href="#">世界の通貨安ランキング</a>
     <div class="asof" id="asof"></div>
   </header>
+  <nav class="tabs" id="tabs" aria-label="画面の切り替え">
+    <a href="#" data-v="rank">ランキング</a><a href="#world" data-v="world">世界の一覧</a>
+  </nav>
 
   <main id="view-rank">
     <section class="alerts" id="alerts" hidden>
@@ -53,6 +56,28 @@
       <div><h3>普段の何倍</h3><p>この 1 週間の動きが、過去 1 年の週ごとの振れ幅の何倍かです。3 倍以上の下落を異変として上に出します。</p></div>
       <div><h3>注意の旗</h3><p>段差・値の飛び・要確認の旗が付いた行は、数字をそのまま信じてはいけない行です。通貨を選ぶと理由が出ます。</p></div>
       <div><h3>市中レート</h3><p>公定レートと街の相場が離れている国は、街の相場で並べます。いまはイランだけです。</p></div>
+    </section>
+  </main>
+
+  <main id="view-world" hidden>
+    <section class="panel">
+      <div class="ui-head">
+        <div>
+          <h1 class="ui-title">地域ごとの通貨の強弱</h1>
+          <div class="ui-sub" id="world-sub"></div>
+        </div>
+        <div class="controls">
+          <div><span class="seg-label">期間</span><span class="seg" id="seg-wperiod">
+            <button type="button" data-p="d1">1日</button><button type="button" data-p="d7">7日</button><button type="button" data-p="d30">30日</button><button type="button" data-p="ytd">年初来</button>
+          </span></div>
+        </div>
+      </div>
+      <div class="legend scale" id="w-legend"></div>
+      <div class="regions" id="regions"></div>
+    </section>
+    <section class="notes">
+      <div><h3>読み方</h3><p>1 マスが 1 通貨です。各地域の中は、弱くなった順に左から並びます。赤が通貨安、青が通貨高です。</p></div>
+      <div><h3>使いどころ</h3><p>通貨安が 1 国だけの問題か、地域ごと売られているのかを見分けます。マスを選ぶと国別の画面に移ります。</p></div>
     </section>
   </main>
 

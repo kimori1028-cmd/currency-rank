@@ -23,6 +23,7 @@ sys.path.insert(0, HERE)
 from currencies import CUR, CODES  # noqa: E402
 import quality  # noqa: E402
 import market  # noqa: E402
+import crosscheck  # noqa: E402
 
 HIST = os.path.join(ROOT, 'data', 'history')
 OUT = os.path.join(ROOT, 'site', 'data')
@@ -97,8 +98,9 @@ def update_history(hist):
     return failed
 
 
-def build(hist, mkt):
-    """mkt = {CODE: {date: rate}}（市中レートのある通貨だけ）。あればそちらで順位を付ける。"""
+def build(hist, mkt, second=None):
+    """mkt = {CODE: {date: rate}}（市中レートのある通貨だけ）。あればそちらで順位を付ける。
+    second = 2 本目のデータ源の最新値 {CODE: rate}（突き合わせ用・無くてもよい）。"""
     days = sorted(hist)
     end = days[-1]
     rows, alerts = [], []
@@ -110,6 +112,9 @@ def build(hist, mkt):
         dates = [d for d, _ in pairs]
         vals = [v for _, v in pairs]
         a = quality.analyze(dates, vals)
+        diff = crosscheck.flag(c, a['rate'], second)
+        if diff:
+            a['flags'].append(diff)   # 配信レートに付く旗
         name, region = CUR[c]
         official = None
         mk = {d: v for d, v in mkt.get(c, {}).items() if d <= end}
@@ -175,7 +180,10 @@ def main():
         else:
             mkt[code], ok = market.update(code, str(START))
             print('%s の市中レート: %s・%d 日分' % (code, '取得' if ok else '取得できず（手元の控えを使用）', len(mkt[code])))
-    build(hist, mkt)
+    second = None if a.no_fetch else crosscheck.fetch()
+    if not a.no_fetch:
+        print('2 本目のデータ源: %s' % ('取得・%d 通貨' % len(second) if second else '取得できず（突き合わせなし）'))
+    build(hist, mkt, second)
 
 
 if __name__ == '__main__':

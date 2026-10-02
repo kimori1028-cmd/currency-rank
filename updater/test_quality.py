@@ -7,6 +7,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import quality  # noqa: E402
+import crosscheck  # noqa: E402
 
 
 def days(n, start='2025-01-01'):
@@ -97,6 +98,14 @@ check('T11 年初来は前年末と比べる', a['ref']['ytd'] == '2025-12-31')
 v = [100.0 * (1.003 ** (i // 7)) * (1 + 0.0008 * math.sin(i // 7)) for i in range(N)]
 a = quality.analyze(d, v)
 check('T12 いつもどおりの切り下げ → 異変にしない', a['alert'] is None and a['d7'] < 0)
+
+# T13 2 本目のデータ源との突き合わせ: 5% 以内は旗なし、超えたら旗、桁違いはデノミの疑い
+check('T13 差 1% → 旗なし', crosscheck.flag('JPY', 150.0, {'JPY': 151.5}) is None)
+f = crosscheck.flag('SDG', 600.0, {'SDG': 511.5})
+check('T13b 差 15% → 食い違いの旗', f is not None and f['k'] == 'diff' and '実勢' in f['why'])
+f = crosscheck.flag('SYP', 13000.0, {'SYP': 121.7})
+check('T13c 桁が違う → デノミの疑いと書く', f is not None and 'デノミ' in f['why'])
+check('T13d 2 本目に無い通貨・取得できない時 → 旗なし', crosscheck.flag('KPW', 900.0, {'JPY': 150}) is None and crosscheck.flag('JPY', 150.0, None) is None)
 
 print()
 print('○ 全 %d 項目通過' % len(results) if all(results) else '× 失敗あり')
